@@ -1,13 +1,10 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
-import os
 import asyncio
+import time
 
 # Твій токен
 BOT_TOKEN = "7460415583:AAFLutgu1nva78UxleLGJcWc4BVJAH5RIzo"
-
-# Адмін
-ADMIN_USERNAME = "@berenskolov"
 
 # Текст для /start
 START_TEXT = """
@@ -30,110 +27,48 @@ MAIN_MENU_TEXT = """
 
 🚚 <b>Інформація про доставку - кнопка "ДОСТАВКА"</b>
 
-💬 <b>Адмін:</b> {admin}
-
 <b>Оберіть потрібну дію з меню нижче 👇</b>
-""".format(admin=ADMIN_USERNAME)
+"""
 
 # Текст для магазину
 SHOP_TEXT = """
 🛍️ <b>НАШ МАГАЗИН</b> 🛍️
 
-<b>Оберіть категорію товарів:</b>
+<b>Натисніть кнопку нижче щоб перейти до повного каталогу товарів:</b>
 
-👇 Натисніть на потрібну категорію нижче
+👇 Перейдіть за посиланням для перегляду всіх товарів
 """
 
 # Текст для доставки
 DELIVERY_TEXT = """
-🚚 <b>ДОСТАВКА ТА ОПЛАТА</b>
+🚚 <b>ДОСТАВКА</b>
 
-<b>📦 Доставка по Україні:</b>
+<b>Час доставки по Україні:</b>
 • Нова Пошта - 1-2 дні
 • Укрпошта - 2-3 дні  
 • Кур'єром по Києву - 1 день
-
-<b>💳 Способи оплати:</b>
-• Готівка при отриманні
-• Карткою онлайн
-• Розстрочка на 3 місяці
 """
-
-# Текст для кожної категорії
-IPHONE_TEXT = """
-📱 <b>IPHONE</b>
-
-<b>Нові моделі:</b>
-• iPhone 17 Pro Max - від 45 000 грн
-• iPhone 16 Pro - від 38 000 грн  
-• iPhone 15 Pro - від 32 000 грн
-• iPhone 15 - від 28 000 грн
-
-<b>Б/в техніка:</b>
-• iPhone 14 Pro Max - від 25 000 грн
-• iPhone 13 Pro - від 20 000 грн
-
-<b>Для замовлення пишіть:</b> {admin}
-""".format(admin=ADMIN_USERNAME)
-
-MACBOOK_TEXT = """
-💻 <b>MACBOOK</b>
-
-<b>Нові моделі:</b>
-• MacBook Pro M3 - від 60 000 грн
-• MacBook Air M2 - від 45 000 грн
-
-<b>Б/в техніка:</b>
-• MacBook Pro M2 - від 40 000 грн
-• MacBook Air M1 - від 30 000 грн
-
-<b>Для замовлення пишіть:</b> {admin}
-""".format(admin=ADMIN_USERNAME)
-
-WATCH_TEXT = """
-⌚ <b>APPLE WATCH</b>
-
-<b>Нові моделі:</b>
-• Apple Watch Series 9 - від 15 000 грн
-• Apple Watch Ultra 2 - від 25 000 грн
-
-<b>Б/в техніка:</b>
-• Apple Watch Series 8 - від 12 000 грн
-
-<b>Для замовлення пишіть:</b> {admin}
-""".format(admin=ADMIN_USERNAME)
-
-AIRPODS_TEXT = """
-🎧 <b>AIRPODS</b>
-
-<b>Нові моделі:</b>
-• AirPods Pro 2 - від 8 000 грн
-• AirPods 3 - від 5 000 грн
-
-<b>Б/в техніка:</b>
-• AirPods Pro 1 - від 6 000 грн
-
-<b>Для замовлення пишіть:</b> {admin}
-""".format(admin=ADMIN_USERNAME)
 
 async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Функція для відправки головного меню"""
-    # Спершу показуємо привітальний текст
-    if update.message:
-        await update.message.reply_text(START_TEXT, parse_mode="HTML")
-    
-    # Потім головне меню з кнопками
-    keyboard = [
-        [InlineKeyboardButton("🛍️ МАГАЗИН", callback_data="shop")],
-        [InlineKeyboardButton("🚚 ДОСТАВКА", callback_data="delivery")],
-        [InlineKeyboardButton("📱 НАПИСАТИ АДМІНУ", url=f"https://t.me/{ADMIN_USERNAME[1:]}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    if update.callback_query:
-        await update.callback_query.edit_message_text(MAIN_MENU_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    else:
-        await update.message.reply_text(MAIN_MENU_TEXT, reply_markup=reply_markup, parse_mode="HTML")
+    try:
+        # Спершу показуємо привітальний текст
+        if update.message:
+            await update.message.reply_text(START_TEXT, parse_mode="HTML")
+        
+        # Потім головне меню з кнопками
+        keyboard = [
+            [InlineKeyboardButton("🛍️ МАГАЗИН", url="t.me/AppleStoreUk_bot/Shop")],
+            [InlineKeyboardButton("🚚 ДОСТАВКА", callback_data="delivery")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        if update.callback_query:
+            await update.callback_query.edit_message_text(MAIN_MENU_TEXT, reply_markup=reply_markup, parse_mode="HTML")
+        else:
+            await update.message.reply_text(MAIN_MENU_TEXT, reply_markup=reply_markup, parse_mode="HTML")
+    except Exception as e:
+        print(f"Помилка при відправці меню: {e}")
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /start"""
@@ -141,98 +76,71 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник кнопок"""
-    query = update.callback_query
-    await query.answer()
-    
-    if query.data == "shop":
-        keyboard = [
-            [InlineKeyboardButton("📱 IPHONE", callback_data="iphone"),
-             InlineKeyboardButton("💻 MACBOOK", callback_data="macbook")],
-            [InlineKeyboardButton("⌚ APPLE WATCH", callback_data="watch"),
-             InlineKeyboardButton("🎧 AIRPODS", callback_data="airpods")],
-            [InlineKeyboardButton("🔙 НАЗАД ДО МЕНЮ", callback_data="back_main")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(SHOP_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "iphone":
-        keyboard = [
-            [InlineKeyboardButton("🔙 НАЗАД ДО МАГАЗИНУ", callback_data="shop"),
-             InlineKeyboardButton("📱 НАПИСАТИ АДМІНУ", url=f"https://t.me/{ADMIN_USERNAME[1:]}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(IPHONE_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "macbook":
-        keyboard = [
-            [InlineKeyboardButton("🔙 НАЗАД ДО МАГАЗИНУ", callback_data="shop"),
-             InlineKeyboardButton("📱 НАПИСАТИ АДМІНУ", url=f"https://t.me/{ADMIN_USERNAME[1:]}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(MACBOOK_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "watch":
-        keyboard = [
-            [InlineKeyboardButton("🔙 НАЗАД ДО МАГАЗИНУ", callback_data="shop"),
-             InlineKeyboardButton("📱 НАПИСАТИ АДМІНУ", url=f"https://t.me/{ADMIN_USERNAME[1:]}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(WATCH_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "airpods":
-        keyboard = [
-            [InlineKeyboardButton("🔙 НАЗАД ДО МАГАЗИНУ", callback_data="shop"),
-             InlineKeyboardButton("📱 НАПИСАТИ АДМІНУ", url=f"https://t.me/{ADMIN_USERNAME[1:]}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(AIRPODS_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "delivery":
-        keyboard = [[InlineKeyboardButton("🔙 НАЗАД", callback_data="back_main")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(DELIVERY_TEXT, reply_markup=reply_markup, parse_mode="HTML")
-    
-    elif query.data == "back_main":
-        await send_main_menu(update, context)
+    try:
+        query = update.callback_query
+        await query.answer()
+        
+        if query.data == "delivery":
+            keyboard = [[InlineKeyboardButton("🔙 НАЗАД", callback_data="back_main")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(DELIVERY_TEXT, reply_markup=reply_markup, parse_mode="HTML")
+        
+        elif query.data == "back_main":
+            await send_main_menu(update, context)
+    except Exception as e:
+        print(f"Помилка в обробнику кнопок: {e}")
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник текстових повідомлень - відправляє меню"""
-    # Автоматично відправляємо меню при будь-якому тексті
-    await send_main_menu(update, context)
+    try:
+        # Автоматично відправляємо меню при будь-якому тексті
+        await send_main_menu(update, context)
+    except Exception as e:
+        print(f"Помилка при обробці тексту: {e}")
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник помилок"""
-    print(f"Помилка: {context.error}")
-    # Можна додати логіку перезапуску або сповіщення адміну
+    error = context.error
+    print(f"Помилка: {error}")
+    print(f"Тип помилки: {type(error)}")
 
 def main():
     """Головна функція"""
-    # Створюємо додаток
-    application = Application.builder().token(BOT_TOKEN).build()
+    max_retries = 5
+    retry_delay = 10  # секунд
     
-    # Додаємо обробники
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CallbackQueryHandler(button_handler))
-    
-    # Обробник для будь-яких текстових повідомлень
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    
-    # Обробник помилок
-    application.add_error_handler(error_handler)
-    
-    print("✅ Бот запущений і готовий до роботи!")
-    print("🎯 Тепер меню з'являється автоматично!")
-    print("🔄 Бот має стабільну роботу!")
-    
-    # Запускаємо бота з обробкою помилок
-    try:
-        application.run_polling()
-    except Exception as e:
-        print(f"Критична помилка: {e}")
-        # Можна додати автоматичний перезапуск
-        print("🔄 Перезапуск бота через 5 секунд...")
-        asyncio.sleep(5)
-        main()
+    for attempt in range(max_retries):
+        try:
+            print(f"🔄 Спроба запуску бота {attempt + 1}/{max_retries}...")
+            
+            # Створюємо додаток з таймаутами
+            application = Application.builder().token(BOT_TOKEN).build()
+            
+            # Додаємо обробники
+            application.add_handler(CommandHandler("start", start_command))
+            application.add_handler(CallbackQueryHandler(button_handler))
+            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+            application.add_error_handler(error_handler)
+            
+            print("✅ Бот запущений і готовий до роботи!")
+            print("🎯 Тепер меню з'являється автоматично!")
+            print("🔄 Бот має стабільну роботу!")
+            
+            # Запускаємо бота
+            application.run_polling(
+                drop_pending_updates=True,
+                allowed_updates=Update.ALL_TYPES
+            )
+            break
+            
+        except Exception as e:
+            print(f"❌ Помилка при запуску (спроба {attempt + 1}): {e}")
+            if attempt < max_retries - 1:
+                print(f"⏳ Чекаємо {retry_delay} секунд перед наступною спробою...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Збільшуємо затримку
+            else:
+                print("❌ Не вдалося запустити бота після всіх спроб")
 
 if __name__ == "__main__":
     main()
